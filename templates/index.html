@@ -12,7 +12,12 @@
         .container {
             max-width: 600px;
         }
+        .spinner-border {
+            display: none;
+            margin: 0 auto;
+        }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -40,27 +45,59 @@
             </div>
             <button type="submit" class="btn btn-primary btn-block">Start Prediction</button>
         </form>
+        <div class="spinner-border text-primary mt-4" role="status" id="loadingSpinner">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <div id="progress" class="mt-2 text-center"></div>
         <div id="result" class="mt-4"></div>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
         $(document).ready(function(){
+            var socket = io();
+
+            socket.on('progress', function(data) {
+                $('#progress').text('Training Progress: ' + data.progress + '%');
+            });
+
+            socket.on('training_complete', function(data) {
+                $('#loadingSpinner').hide();
+                $('#progress').text('');
+                $('#result').html(`
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Prediction Results</h5>
+                            <p class="card-text">Root Mean Squared Error: ${data.rmse}</p>
+                            <p class="card-text">R-Squared Value: ${data.r2}</p>
+                            <div id="plot-placeholder" class="img-fluid" alt="Prediction Plot"></div>
+                        </div>
+                    </div>
+                `);
+            });
+
+            socket.on('plot_complete', function(data) {
+                console.log("Received plot path: " + data.plot_path);  // Debug statement
+                $('#plot-placeholder').html('<img src="' + data.plot_path + '" class="img-fluid" alt="Prediction Plot">');
+            });
+
             $('#predictionForm').on('submit', function(e){
                 e.preventDefault();
+                $('#loadingSpinner').show();
+                $('#result').empty();
+                $('#progress').text('');
                 $.ajax({
                     url: '/predict',
                     method: 'POST',
                     data: $(this).serialize(),
                     success: function(response){
+                        $('#result').html('<div class="alert alert-info" role="alert">Training started...</div>');
+                    },
+                    error: function(){
+                        $('#loadingSpinner').hide();
                         $('#result').html(`
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Prediction Results</h5>
-                                    <p class="card-text">Root Mean Squared Error: ${response.rmse}</p>
-                                    <p class="card-text">R-Squared Value: ${response.r2}</p>
-                                    <img src="${response.plot_path}" class="img-fluid" alt="Prediction Plot">
-                                </div>
+                            <div class="alert alert-danger" role="alert">
+                                An error occurred while processing the prediction.
                             </div>
                         `);
                     }
