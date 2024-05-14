@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Market Prediction</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+        }
+        .container {
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center">Stock Market Prediction</h2>
+        <form id="predictionForm">
+            <div class="form-group">
+                <label for="model">Choose Model Architecture:</label>
+                <select class="form-control" id="model" name="model">
+                    <option value="LSTM">LSTM</option>
+                    <option value="GRU">GRU</option>
+                    <option value="SimpleRNN">SimpleRNN</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="preset">Choose Preset Configuration:</label>
+                <select class="form-control" id="preset" name="preset">
+                    {% for preset in presets %}
+                        <option value="{{ preset }}">{{ preset }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="epochs">Number of Epochs:</label>
+                <input type="number" class="form-control" id="epochs" name="epochs" value="75">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Start Prediction</button>
+        </form>
+        <div id="result" class="mt-4"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('#predictionForm').on('submit', function(e){
+                e.preventDefault();
+                $.ajax({
+                    url: '/predict',
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response){
+                        $('#result').html(`
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Prediction Results</h5>
+                                    <p class="card-text">Root Mean Squared Error: ${response.rmse}</p>
+                                    <p class="card-text">R-Squared Value: ${response.r2}</p>
+                                    <img src="${response.plot_path}" class="img-fluid" alt="Prediction Plot">
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
