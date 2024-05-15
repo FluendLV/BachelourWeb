@@ -16,7 +16,7 @@ import threading
 from pyngrok import ngrok
 
 ngrok_authtoken = os.getenv("NGROK_AUTHTOKEN")
-ngrok.set_auth_token(ngrok_authtoken);
+ngrok.set_auth_token(ngrok_authtoken)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
