@@ -13,6 +13,10 @@ import uuid
 from model import prepare_data, create_model
 from flask_socketio import SocketIO, emit
 import threading
+from pyngrok import ngrok
+
+# ngrok_authtoken = os.getenv("NGROK_AUTHTOKEN")
+# ngrok.set_auth_token(ngrok_authtoken);
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -106,5 +110,17 @@ def save_plot(test_set, predicted_stock_price):
     print(f"Plot saved as {plot_filename} at {plot_path}")
     return plot_path
 
+def run_flask_app():
+    socketio.run(app, port=5000)
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    thread = threading.Thread(target=run_flask_app)
+    thread.start()
+
+    # Create a public URL for the Flask app using ngrok
+    public_url = ngrok.connect(5000)
+    print(f"Public URL: {public_url}")
+
+
+
+
