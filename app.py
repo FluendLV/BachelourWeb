@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -11,12 +11,12 @@ from sklearn.metrics import mean_squared_error
 import os
 import uuid
 from model import prepare_data, create_model
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, send
 import threading
 from pyngrok import ngrok
 
 ngrok_authtoken = os.getenv("NGROK_AUTHTOKEN")
-ngrok.set_auth_token(ngrok_authtoken)
+ngrok.set_auth_token('2gV2pOPnD0IfGYU4OuDAZ1rZn90_7Re7E79Cs8nALS1PFszrd')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -76,7 +76,6 @@ def predict():
 
         # Save plot
         plot_path = save_plot(test_set, predicted_stock_price)
-        print(f"Plot saved to {plot_path}")
         
         # Calculate performance metrics
         rmse = math.sqrt(mean_squared_error(test_set, predicted_stock_price))
@@ -89,7 +88,6 @@ def predict():
         }
         socketio.emit('training_complete', result)
         socketio.emit('plot_complete', {'plot_path': plot_path})
-        print("Training complete, results and plot sent.")
 
     threading.Thread(target=train_model).start()
     
@@ -107,11 +105,10 @@ def save_plot(test_set, predicted_stock_price):
     plot_path = os.path.join('static', plot_filename)
     plt.savefig(plot_path)
     plt.close()
-    print(f"Plot saved as {plot_filename} at {plot_path}")
     return plot_path
 
 def run_flask_app():
-    socketio.run(app, port=5000)
+    socketio.run(app, host="0.0.0.0", port=5000)
 
 if __name__ == '__main__':
     thread = threading.Thread(target=run_flask_app)
@@ -120,7 +117,3 @@ if __name__ == '__main__':
     # Create a public URL for the Flask app using ngrok
     public_url = ngrok.connect(5000)
     print(f"Public URL: {public_url}")
-
-
-
-
